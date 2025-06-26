@@ -10,11 +10,16 @@ import yaml
 from loguru import logger
 
 from magic_pdf.libs.config_reader import get_device, get_local_models_dir
-from .ocr_utils import check_img, preprocess_image, sorted_boxes, merge_det_boxes, update_det_boxes, get_rotate_crop_image
-from .tools.infer.predict_system import TextSystem
-from .tools.infer import pytorchocr_utility as utility
+from magic_pdf.model.sub_modules.ocr.paddleocr2pytorch.ocr_utils import check_img, preprocess_image, sorted_boxes, merge_det_boxes, update_det_boxes, get_rotate_crop_image
+from magic_pdf.model.sub_modules.ocr.paddleocr2pytorch.tools.infer.predict_system import TextSystem
+from magic_pdf.model.sub_modules.ocr.paddleocr2pytorch.tools.infer import pytorchocr_utility as utility
 import argparse
 
+try:
+    from magic_pdf.model.sub_modules.ocr.paddleocr2pytorch.tpuocr.predict_system import TPUTextSystem
+    TPU_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"TPU modules not available: {e}")
 
 latin_lang = [
         'af', 'az', 'bs', 'cs', 'cy', 'da', 'de', 'es', 'et', 'fr', 'ga', 'hr',  # noqa: E126
@@ -49,6 +54,17 @@ root_dir = Path(__file__).resolve().parent
 
 class PytorchPaddleOCR(TextSystem):
     def __init__(self, *args, **kwargs):
+        if TPU_AVAILABLE:
+            logger.info("Using TPU OCR system")
+            self.tpu_system = TPUTextSystem(*args, **kwargs)
+            self.use_tpu = True
+            self.drop_score = 0.5
+            self.lang = 'ch_lite'
+            return
+        else:
+            logger.warning("TPU not available, falling back to PyTorch")
+            self.use_tpu = False
+        
         parser = utility.init_args()
         args = parser.parse_args(args)
 
@@ -95,6 +111,9 @@ class PytorchPaddleOCR(TextSystem):
             mfd_res=None,
             tqdm_enable=False,
             ):
+        if self.use_tpu:
+            return self.tpu_system.ocr(img, det, rec, mfd_res, tqdm_enable)
+        
         assert isinstance(img, (np.ndarray, list, str, bytes))
         if isinstance(img, list) and det == True:
             logger.error('When input a list of images, det must be false')
@@ -143,6 +162,8 @@ class PytorchPaddleOCR(TextSystem):
                 return ocr_res
 
     def __call__(self, img, mfd_res=None):
+        if self.use_tpu:
+            return self.tpu_system(img, mfd_res)
 
         if img is None:
             logger.debug("no valid image provided")
@@ -186,7 +207,7 @@ class PytorchPaddleOCR(TextSystem):
 
 if __name__ == '__main__':
     pytorch_paddle_ocr = PytorchPaddleOCR()
-    img = cv2.imread("/Users/myhloli/Downloads/screenshot-20250326-194348.png")
+    img = cv2.imread("/data2/MinerU/demo/Snipaste_2025-06-25_14-29-49.png")
     dt_boxes, rec_res = pytorch_paddle_ocr(img)
     ocr_res = []
     if not dt_boxes and not rec_res:

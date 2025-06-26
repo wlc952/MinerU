@@ -51,3 +51,6 @@ _build/
 
 
 output/
+demo
+.venv
+magic_pdf.egg-info

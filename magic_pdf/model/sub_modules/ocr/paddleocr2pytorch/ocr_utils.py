@@ -46,6 +46,10 @@ def sorted_boxes(dt_boxes):
     return:
         sorted boxes(array) with shape [4, 2]
     """
+    # 处理空数组的情况
+    if len(dt_boxes) == 0:
+        return dt_boxes
+        
     num_boxes = dt_boxes.shape[0]
     sorted_boxes = sorted(dt_boxes, key=lambda x: (x[0][1], x[0][0]))
     _boxes = list(sorted_boxes)

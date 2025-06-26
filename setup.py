@@ -34,37 +34,20 @@ if __name__ == '__main__':
         },
         install_requires=parse_requirements('requirements.txt'),  # 项目依赖的第三方库
         extras_require={
-            "lite": [
-                    "paddleocr==2.7.3",
-                    "paddlepaddle==3.0.0b1;platform_system=='Linux'",
-                    "paddlepaddle==2.6.1;platform_system=='Windows' or platform_system=='Darwin'",
-            ],
             "full": [
                      "matplotlib>=3.10,<4",
-                     "ultralytics>=8.3.48,<9",  # yolov8,公式检测
-                     "doclayout_yolo==0.0.2b1",  # doclayout_yolo
-                     "dill>=0.3.8,<1",  # doclayout_yolo
-                     "rapid_table>=1.0.5,<2.0.0",  # rapid_table
+                     # "ultralytics>=8.3.48,<9",  # yolov8,公式检测
+                     # "doclayout_yolo==0.0.2b1",  # doclayout_yolo
+                     # "dill>=0.3.8,<1",  # doclayout_yolo
+                     # "rapid_table>=1.0.5,<2.0.0",  # rapid_table
                      "PyYAML>=6.0.2,<7",  # yaml
                      "ftfy>=6.3.1,<7",  # unimernet_hf
                      "openai>=1.70.0,<2",  # openai SDK
                      "shapely>=2.0.7,<3",  # imgaug-paddleocr2pytorch
                      "pyclipper>=1.3.0,<2",  # paddleocr2pytorch
                      "omegaconf>=2.3.0,<3",  # paddleocr2pytorch
-            ],
-            "full_old_linux": [
-                    "matplotlib>=3.10,<=3.10.1",
-                    "ultralytics>=8.3.48,<=8.3.104",  # yolov8,公式检测
-                    "doclayout_yolo==0.0.2b1",  # doclayout_yolo
-                    "dill==0.3.8",  # doclayout_yolo
-                    "PyYAML==6.0.2",  # yaml
-                    "ftfy==6.3.1",  # unimernet_hf
-                    "openai==1.71.0",  # openai SDK
-                    "shapely==2.1.0",  # imgaug-paddleocr2pytorch
-                    "pyclipper==1.3.0.post6",  # paddleocr2pytorch
-                    "omegaconf==2.3.0",  # paddleocr2pytorch
-                    "albumentations==1.4.20", # 1.4.21引入的simsimd不支持2019年及更早的linux系统
-                    "rapid_table==1.0.3",  # rapid_table新版本依赖的onnxruntime不支持2019年及更早的linux系统
+                     "untool>=0.2.1",  # tpu推理
+                     "opencv-python-headless",
             ],
         },
         description="A practical tool for converting PDF to Markdown",  # 简短描述

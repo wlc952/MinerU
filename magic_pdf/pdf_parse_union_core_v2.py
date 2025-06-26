@@ -324,39 +324,45 @@ def txt_spans_extract_v2(pdf_page, spans, all_bboxes, all_discarded_blocks, lang
     return spans
 
 
+# def model_init(model_name: str):
+#     from transformers import LayoutLMv3ForTokenClassification
+#     device_name = get_device()
+#     bf_16_support = False
+#     if device_name.startswith("cuda"):
+#         bf_16_support = torch.cuda.is_bf16_supported()
+#     elif device_name.startswith("mps"):
+#         bf_16_support = True
+
+#     device = torch.device(device_name)
+#     if model_name == 'layoutreader':
+#         # 检测modelscope的缓存目录是否存在
+#         layoutreader_model_dir = get_local_layoutreader_model_dir()
+#         if os.path.exists(layoutreader_model_dir):
+#             model = LayoutLMv3ForTokenClassification.from_pretrained(
+#                 layoutreader_model_dir
+#             )
+#         else:
+#             logger.warning(
+#                 'local layoutreader model not exists, use online model from huggingface'
+#             )
+#             model = LayoutLMv3ForTokenClassification.from_pretrained(
+#                 'hantian/layoutreader'
+#             )
+#         if bf_16_support:
+#             model.to(device).eval().bfloat16()
+#         else:
+#             model.to(device).eval()
+#     else:
+#         logger.error('model name not allow')
+#         exit(1)
+#     return model
+
 def model_init(model_name: str):
-    from transformers import LayoutLMv3ForTokenClassification
-    device_name = get_device()
-    bf_16_support = False
-    if device_name.startswith("cuda"):
-        bf_16_support = torch.cuda.is_bf16_supported()
-    elif device_name.startswith("mps"):
-        bf_16_support = True
-
-    device = torch.device(device_name)
-    if model_name == 'layoutreader':
-        # 检测modelscope的缓存目录是否存在
-        layoutreader_model_dir = get_local_layoutreader_model_dir()
-        if os.path.exists(layoutreader_model_dir):
-            model = LayoutLMv3ForTokenClassification.from_pretrained(
-                layoutreader_model_dir
-            )
-        else:
-            logger.warning(
-                'local layoutreader model not exists, use online model from huggingface'
-            )
-            model = LayoutLMv3ForTokenClassification.from_pretrained(
-                'hantian/layoutreader'
-            )
-        if bf_16_support:
-            model.to(device).eval().bfloat16()
-        else:
-            model.to(device).eval()
-    else:
-        logger.error('model name not allow')
-        exit(1)
+    from untool import EngineOV
+    from magic_pdf.libs.config_reader import get_local_models_dir
+    model_path = os.path.join(get_local_models_dir(), "Layoutreader", "layoutreader_bf16.bmodel")
+    model = EngineOV(model_path, 0)
     return model
-
 
 class ModelSingleton:
     _instance = None
@@ -374,16 +380,66 @@ class ModelSingleton:
 
 
 def do_predict(boxes: List[List[int]], model) -> List[int]:
-    from magic_pdf.model.sub_modules.reading_oreder.layoutreader.helpers import (
-        boxes2inputs, parse_logits, prepare_inputs)
-
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=FutureWarning, module="transformers")
-
         inputs = boxes2inputs(boxes)
-        inputs = prepare_inputs(inputs, model)
-        logits = model(**inputs).logits.cpu().squeeze(0)
+        logits = model(inputs)[0]
+        logits = logits[0, :len(boxes) + 2]
+
     return parse_logits(logits, len(boxes))
+
+def boxes2inputs(boxes: List[List[int]]) -> List[np.ndarray]:
+    MAX_LEN = 510
+    CLS_TOKEN_ID = 0
+    UNK_TOKEN_ID = 3
+    EOS_TOKEN_ID = 2
+
+    bbox = [[0, 0, 0, 0]] + boxes + [[0, 0, 0, 0]] + [[0, 0, 0, 0]] * (MAX_LEN - len(boxes))
+    input_ids = [CLS_TOKEN_ID] + [UNK_TOKEN_ID] * len(boxes) + [EOS_TOKEN_ID] + [EOS_TOKEN_ID] * (MAX_LEN - len(boxes))
+    attention_mask = [1] + [1] * len(boxes) + [1] + [0] * (MAX_LEN - len(boxes))
+    
+    bbox = np.array([bbox], dtype=np.int32)
+    input_ids = np.array([input_ids], dtype=np.int32)
+    attention_mask = np.array([attention_mask], dtype=np.int32)
+
+    return [input_ids, bbox, attention_mask]
+
+def parse_logits(logits: torch.Tensor, length: int) -> List[int]:
+    """
+    parse logits to orders
+
+    :param logits: logits from model
+    :param length: input length
+    :return: orders
+    """
+    if not isinstance(logits, torch.Tensor):
+        logits = torch.tensor(logits)
+    from collections import defaultdict
+    logits = logits[1 : length + 1, :length]
+    orders = logits.argsort(descending=False).tolist()
+    ret = [o.pop() for o in orders]
+    while True:
+        order_to_idxes = defaultdict(list)
+        for idx, order in enumerate(ret):
+            order_to_idxes[order].append(idx)
+        # filter idxes len > 1
+        order_to_idxes = {k: v for k, v in order_to_idxes.items() if len(v) > 1}
+        if not order_to_idxes:
+            break
+        # filter
+        for order, idxes in order_to_idxes.items():
+            # find original logits of idxes
+            idxes_to_logit = {}
+            for idx in idxes:
+                idxes_to_logit[idx] = logits[idx, order]
+            idxes_to_logit = sorted(
+                idxes_to_logit.items(), key=lambda x: x[1], reverse=True
+            )
+            # keep the highest logit as order, set others to next candidate
+            for idx, _ in idxes_to_logit[1:]:
+                ret[idx] = orders[idx].pop()
+
+    return ret
 
 
 def cal_block_index(fix_blocks, sorted_bboxes):

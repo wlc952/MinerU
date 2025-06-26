@@ -61,7 +61,8 @@ class BatchAnalyze:
         #     f'layout time: {round(time.time() - layout_start_time, 2)}, image num: {len(images)}'
         # )
 
-        if self.model.apply_formula:
+        if False:
+        # if self.model.apply_formula:
             # 公式检测
             mfd_start_time = time.time()
             images_mfd_res = self.model.mfd_model.batch_predict(
@@ -168,7 +169,8 @@ class BatchAnalyze:
 
 
         # 表格识别 table recognition
-        if self.model.apply_table:
+        if False:
+        # if self.model.apply_table:
             table_start = time.time()
             # for table_res_list_dict in table_res_list_all_page:
             for table_res_dict in tqdm(table_res_list_all_page, desc="Table Predict"):

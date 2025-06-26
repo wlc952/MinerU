@@ -3,12 +3,12 @@ from loguru import logger
 
 from magic_pdf.config.constants import MODEL_NAME
 from magic_pdf.model.model_list import AtomicModel
-from magic_pdf.model.sub_modules.language_detection.yolov11.YOLOv11 import YOLOv11LangDetModel
+# from magic_pdf.model.sub_modules.language_detection.yolov11.YOLOv11 import YOLOv11LangDetModel
 from magic_pdf.model.sub_modules.layout.doclayout_yolo.DocLayoutYOLO import DocLayoutYOLOModel
-from magic_pdf.model.sub_modules.mfd.yolov8.YOLOv8 import YOLOv8MFDModel
-from magic_pdf.model.sub_modules.mfr.unimernet.Unimernet import UnimernetModel
+# from magic_pdf.model.sub_modules.mfd.yolov8.YOLOv8 import YOLOv8MFDModel
+# from magic_pdf.model.sub_modules.mfr.unimernet.Unimernet import UnimernetModel
 from magic_pdf.model.sub_modules.ocr.paddleocr2pytorch.pytorch_paddle import PytorchPaddleOCR
-from magic_pdf.model.sub_modules.table.rapidtable.rapid_table import RapidTableModel
+# from magic_pdf.model.sub_modules.table.rapidtable.rapid_table import RapidTableModel
 # try:
 #     from magic_pdf_ascend_plugin.libs.license_verifier import (
 #         LicenseExpiredError, LicenseFormatError, LicenseSignatureError,
