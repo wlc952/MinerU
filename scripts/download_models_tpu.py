@@ -3,10 +3,10 @@ import json
 import os
 import shutil
 
-# from modelscope import snapshot_download
+from modelscope import snapshot_download
 
 mineru_path = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-# model_dir = snapshot_download("wlc952/mineru", local_dir=f"{mineru_path}/models/mineru")
+model_dir = snapshot_download("wlc952/mineru", local_dir=f"{mineru_path}/models/mineru")
 
 # 更新 magic-pdf.json 配置文件
 config_file = os.path.join(mineru_path, "magic-pdf.json")

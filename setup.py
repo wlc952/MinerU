@@ -48,6 +48,7 @@ if __name__ == '__main__':
                      "omegaconf>=2.3.0,<3",  # paddleocr2pytorch
                      "untool>=0.2.1",  # tpu推理
                      "opencv-python-headless",
+                     "modelscope",
             ],
         },
         description="A practical tool for converting PDF to Markdown",  # 简短描述
